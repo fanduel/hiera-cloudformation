@@ -1,29 +1,92 @@
 # Hiera::Cloudformation
 
-TODO: Write a gem description
+This backend for Hiera can retrieve information from:
+
+* the outputs of a CloudFormation stack
+* the metadata of a resource in a stack
 
 ## Installation
 
-Add this line to your application's Gemfile:
-
-    gem 'hiera-cloudformation'
-
-And then execute:
-
-    $ bundle
-
-Or install it yourself as:
-
-    $ gem install hiera-cloudformation
+    gem install hiera-cloudformation
 
 ## Usage
 
-TODO: Write usage instructions here
+Add the backend to the list of backends in hiera.yaml:
 
-## Contributing
+    ---
+    :backends:
+      - yaml
+      - cloudformation
 
-1. Fork it
-2. Create your feature branch (`git checkout -b my-new-feature`)
-3. Commit your changes (`git commit -am 'Add some feature'`)
-4. Push to the branch (`git push origin my-new-feature`)
-5. Create new Pull Request
+To use this backend you also need to add entries to your "hierarchy" in your hiera.yaml file.
+If you put an entry of this form in your hierarchy:
+
+    cfstack/<stack name>/outputs
+
+the backend will request the outputs of the stack named `<stack name>` and search for an output
+named the same as the requested key. If an output named the same as the key is found, the backend
+will return the value of that output (as a string).
+If you put an entry of this form in your hierarchy:
+
+    cfstack/<stack name>/resources/<logical resource ID>
+
+the backend will request the JSON metadata of the logical resource identified by the given ID,
+in the named stack, and look for a JSON object under the top-level key "hiera" in the metadata.
+If a JSON object is present under the top-level key "hiera", the backend will search for the
+requested key in that JSON object, and return the value of the key if present.
+
+The recommended way of constructing your hierarchy so that Puppet-managed nodes can retrieve
+data relating to the CloudFormation stack they're part of, is to create facts on the Puppet nodes
+describing what CloudFormation stack they're part of and what logical resource ID corresponds to
+their instance. Then, assuming you have two facts "cloudformation_stack" and "cloudformation_resource"
+reported on your node, you can add these entries to the "hierarchy" in hiera.yaml:
+
+    - cfstack/%{cloudformation_stack}/outputs
+    - cfstack/%{cloudformation_stack}/resources/%{cloudformation_resource}
+
+and Hiera will replace the `%{...}` placeholders with the value of the facts on the node, enabling
+the node to look up information about the stack it "belongs" to.
+
+For example, if this snippet is included in your CloudFormation template, and you include an entry
+
+    cfstack/<stack name>/outputs
+
+in your hierarchy, you can look up the key "example_key" in Hiera and get the value of the logical
+resource identified by "AWSEC2Instance" (for example, this might be an EC2 instance, so Hiera
+would return the instance ID)
+
+    "Outputs" : {
+      "example_key": {
+        "Description" : "AWSEC2Instance is the logical resource ID of the instance that was created",
+        "Value" : { "Ref": "AWSEC2Instance" }
+      }
+    }
+
+As another example, if you define an EC2 instance with the following snippet in your CloudFormation
+template, including some metadata:
+
+    "Resources" : {
+      "MyIAMKey" : {
+        "Type" : "AWS::IAM::AccessKey",
+        ...
+      },
+      "AWSEC2Instance" : {
+        "Type" : "AWS::EC2::Instance",
+        "Properties" : {
+          ...
+        },
+        "Metadata" : {
+          "hiera" : {
+            "class::access_key_id": { "Ref": "MyIAMKey" },
+            "class::secret_access_key": { "Fn::GetAtt" : [ "MyIAMKey" , "SecretAccessKey" ] }
+          }
+        }
+      }
+    }
+
+and you include an entry:
+
+    cfstack/<stack name>/resources/AWSEC2Instance
+
+in your hierarchy, you can query hiera for the key "class::access_key_id" or "class::secret_access_key"
+and retrieve the attributes of the "MyIAMKey" resource created by CloudFormation.
