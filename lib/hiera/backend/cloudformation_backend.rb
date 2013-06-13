@@ -1,8 +1,19 @@
-# Possible scopes:
-# cfstack/<stack name>/outputs
-#  - key corresponds to output name in this case
-# cfstack/<stack name>/resources/<logical resource id>
-#  - key is read from JSON-formatted resource metadata
+=begin
+Copyright [yyyy] [name of copyright owner]
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+	http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+=end
+
 class Hiera
 	module Backend
 		class Cloudformation_backend
@@ -28,7 +39,7 @@ class Hiera
 			end
 
 			def lookup(key, scope, order_override, resolution_type)
-				Hiera.debug("We are meant to lookup '#{key}' with scope '#{scope}', order_override '#{order_override}' and resolution_type '#{resolution_type}'")
+				Hiera.debug("CloudFormation lookup '#{key}' with scope '#{scope}', order_override '#{order_override}' and resolution_type '#{resolution_type}'")
 
 				answer = nil
 
@@ -73,6 +84,7 @@ class Hiera
 				outputs = @output_cache.get(stack_name)
 
 				if outputs.nil? then
+					Hiera.debug("#{stack_name} outputs not cached, fetching...")
 					begin
 						outputs = @cf.stacks[stack_name].outputs
 					rescue AWS::CloudFormation::Errors::ValidationError
@@ -80,6 +92,8 @@ class Hiera
 						outputs = []  # this is just a non-nil value to serve as marker in cache
 					end
 					@output_cache.put(stack_name, outputs, TIMEOUT)
+				else
+					Hiera.debug("#{stack_name} outputs were cached: #{outputs}")
 				end
 
 				output = outputs.select { |item| item.key == key }
@@ -92,6 +106,7 @@ class Hiera
 				metadata = @resource_cache.get({:stack => stack_name, :resource => resource_id})
 
 				if metadata.nil? then
+					Hiera.debug("#{stack_name} #{resource_id} metadata not cached, fetching")
 					begin
 						metadata = @cf.stacks[stack_name].resources[resource_id].metadata
 					rescue AWS::CloudFormation::Errors::ValidationError
@@ -100,6 +115,8 @@ class Hiera
 						metadata = "{}" # This is just a non-nil value to serve as marker in cache
 					end
 					@resource_cache.put({:stack => stack_name, :resource => resource_id}, metadata, TIMEOUT)
+				else
+					Hiera.debug("#{stack_name} #{resource_id} metadata was cached: #{metadata}")
 				end
 
 				Hiera.debug("Metadata for resource #{resource_id} of stack #{stack_name} is #{metadata}")
@@ -107,7 +124,9 @@ class Hiera
 				if metadata.respond_to?(:to_str) then
 					data = JSON.parse(metadata)
 
-					return data[key] if data.include?(key)
+					if data.include?('hiera') then
+						return data['hiera'][key] if data['hiera'].include?(key)
+					end
 				end
 
 				return nil
