@@ -18,6 +18,17 @@ Add the backend to the list of backends in hiera.yaml:
       - yaml
       - cloudformation
 
+To provide the backend with an AWS access key, you can add the following configuration to the
+`:cloudformation` section in hiera.yaml:
+
+    :cloudformation:
+      :access_key_id: Your_AWS_Access_Key_ID_Here
+      :secret_access_key: Your_AWS_Secret_Access_Key_Here
+
+If you do not add these keys to your configuration file, the access keys will be looked up from
+the `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` environment variables, or from an IAM
+instance role (if you are running Hiera on an EC2 instance with an IAM role assigned).
+
 To use this backend you also need to add entries to your "hierarchy" in your hiera.yaml file.
 If you put an entry of this form in your hierarchy:
 

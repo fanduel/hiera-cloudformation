@@ -31,6 +31,17 @@ class Hiera
 					require 'json'
 				end
 
+				if Config.include?(:cloudformation) && !Config[:cloudformation].nil? &&
+					Config[:cloudformation].include?(:access_key_id) && Config[:cloudformation].include?(:secret_access_key)
+					Hiera.debug("Found AWS access key from configuration")
+					AWS.config({
+						:access_key_id => Config[:cloudformation][:access_key_id],
+						:secret_access_key => Config[:cloudformation][:secret_access_key]
+					})
+				else
+					Hiera.debug("No configuration found, will fall back to env variables or IAM role")
+				end
+
 				@cf = AWS::CloudFormation.new
 				@output_cache = TimedCache.new
 				@resource_cache = TimedCache.new
