@@ -39,8 +39,6 @@ class Hiera
 			end
 
 			def lookup(key, scope, order_override, resolution_type)
-				Hiera.debug("CloudFormation lookup '#{key}' with scope '#{scope}', order_override '#{order_override}' and resolution_type '#{resolution_type}'")
-
 				answer = nil
 
 				Backend.datasources(scope, order_override) do |elem|
@@ -56,11 +54,9 @@ class Hiera
 						next
 					end
 
-					Hiera.debug("raw_answer is #{raw_answer}")
 					next if raw_answer.nil?
 
 					new_answer = Backend.parse_answer(raw_answer, scope)
-					Hiera.debug("new_answer is #{new_answer}")
 
 					case resolution_type
 					when :array
@@ -70,7 +66,7 @@ class Hiera
 					when :hash
 						raise Exception, "Hiera type mismatch: expected Hash and got #{new_answer.class}" unless new_answer.kind_of? Hash
 						answer ||= {}
-						answer = Backend.merge_answer(new_answer,answer)
+						answer = Backend.merge_answer(new_answer, answer)
 					else
 						answer = new_answer
 						break
@@ -92,12 +88,9 @@ class Hiera
 						outputs = []  # this is just a non-nil value to serve as marker in cache
 					end
 					@output_cache.put(stack_name, outputs, TIMEOUT)
-				else
-					Hiera.debug("#{stack_name} outputs were cached: #{outputs}")
 				end
 
 				output = outputs.select { |item| item.key == key }
-				Hiera.debug("Retrieved #{output} as stack output for #{key}")
 
 				return output.empty? ? nil : output.shift.value
 			end
@@ -115,11 +108,7 @@ class Hiera
 						metadata = "{}" # This is just a non-nil value to serve as marker in cache
 					end
 					@resource_cache.put({:stack => stack_name, :resource => resource_id}, metadata, TIMEOUT)
-				else
-					Hiera.debug("#{stack_name} #{resource_id} metadata was cached: #{metadata}")
 				end
-
-				Hiera.debug("Metadata for resource #{resource_id} of stack #{stack_name} is #{metadata}")
 
 				if metadata.respond_to?(:to_str) then
 					data = JSON.parse(metadata)
