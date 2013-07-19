@@ -24,8 +24,8 @@ spec = Gem::Specification.new do |gem|
 	gem.email         = ["hugh@fanduel.com"]
 	gem.summary       = %q{CloudFormation backend for Hiera}
 	gem.description   = %q{Queries CloudFormation stack outputs or resource metadata for Hiera data}
-	gem.homepage      = ""
-	gem.license       = "MIT"
+	gem.homepage      = "https://github.com/fanduel/hiera-cloudformation"
+	gem.license       = "Apache License (2.0)"
 
 	gem.files         = Dir['{bin,lib,man,test,spec}/**/*', 'Rakefile', 'README*', 'LICENSE*']
 	gem.executables   = gem.files.grep(%r{^bin/}) { |f| File.basename(f) }
