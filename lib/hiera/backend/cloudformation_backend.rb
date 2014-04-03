@@ -36,7 +36,8 @@ class Hiera
 					Hiera.debug("Found AWS access key from configuration")
 					AWS.config({
 						:access_key_id => Config[:cloudformation][:access_key_id],
-						:secret_access_key => Config[:cloudformation][:secret_access_key]
+						:secret_access_key => Config[:cloudformation][:secret_access_key],
+						:region => Config[:cloudformation][:region]
 					})
 				else
 					Hiera.debug("No configuration found, will fall back to env variables or IAM role")

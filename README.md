@@ -24,9 +24,10 @@ To provide the backend with an AWS access key, you can add the following configu
     :cloudformation:
       :access_key_id: Your_AWS_Access_Key_ID_Here
       :secret_access_key: Your_AWS_Secret_Access_Key_Here
+      :region: Your AWS Region here
 
 If you do not add these keys to your configuration file, the access keys will be looked up from
-the `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` environment variables, or from an IAM
+the `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` and `AWS_REGION` environment variables, or from an IAM
 instance role (if you are running Hiera on an EC2 instance with an IAM role assigned).
 
 To use this backend you also need to add entries to your "hierarchy" in your hiera.yaml file.
