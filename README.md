@@ -29,6 +29,16 @@ If you do not add these keys to your configuration file, the access keys will be
 the `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` environment variables, or from an IAM
 instance role (if you are running Hiera on an EC2 instance with an IAM role assigned).
 
+The AWS region to use can also be configured in the `:cloudformation` section of hiera.yaml.
+You can also tell the backend to convert string literals "true", "false", "3.14", etc to Boolean
+or Number types with the `:parse_metadata` configuration option; this may be useful as
+CloudFormation will convert Booleans and Numbers in the template JSON metadata into Strings when
+retrieved from a stack resource:
+
+    :cloudformation:
+      :region: 'us-west-1'
+      :parse_metadata: true
+
 To use this backend you also need to add entries to your "hierarchy" in your hiera.yaml file.
 If you put an entry of this form in your hierarchy:
 
