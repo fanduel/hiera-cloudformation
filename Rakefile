@@ -19,7 +19,7 @@ require 'rubygems/package_task'
 
 spec = Gem::Specification.new do |gem|
 	gem.name          = "hiera-cloudformation"
-	gem.version       = '0.0.1'
+	gem.version       = '0.0.2'
 	gem.authors       = ["Hugh Cole-Baker"]
 	gem.email         = ["hugh@fanduel.com"]
 	gem.summary       = %q{CloudFormation backend for Hiera}

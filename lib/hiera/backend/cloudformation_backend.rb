@@ -31,18 +31,35 @@ class Hiera
 					require 'json'
 				end
 
-				if Config.include?(:cloudformation) && !Config[:cloudformation].nil? &&
-					Config[:cloudformation].include?(:access_key_id) && Config[:cloudformation].include?(:secret_access_key)
-					Hiera.debug("Found AWS access key from configuration")
-					AWS.config({
-						:access_key_id => Config[:cloudformation][:access_key_id],
-						:secret_access_key => Config[:cloudformation][:secret_access_key]
-					})
+				if Config.include?(:cloudformation) && !Config[:cloudformation].nil? then
+					if Config[:cloudformation].fetch(:parse_metadata, false) then
+						Hiera.debug("Will convert CloudFormation stringified metadata back to numbers or booleans.")
+						@parse_metadata = true
+					else
+						@parse_metadata = false
+					end
+
+					aws_config = {}
+					if Config[:cloudformation].include?(:access_key_id) && Config[:cloudformation].include?(:secret_access_key) then
+						Hiera.debug("Found AWS access key #{Config[:cloudformation][:access_key_id]} from configuration")
+						aws_config[:access_key_id] = Config[:cloudformation][:access_key_id]
+						aws_config[:secret_access_key] = Config[:cloudformation][:secret_access_key]
+					end
+					if Config[:cloudformation].include?(:region) then
+						Hiera.debug("Found AWS region #{Config[:cloudformation][:region]} from configuration")
+						aws_config[:region] = Config[:cloudformation][:region]
+					end
+					if aws_config.length != 0 then
+						@cf = AWS::CloudFormation.new(aws_config)
+					else
+						Hiera.debug("No AWS configuration found, will fall back to env variables or IAM role")
+						@cf = AWS::CloudFormation.new
+					end
 				else
 					Hiera.debug("No configuration found, will fall back to env variables or IAM role")
+					@cf = AWS::CloudFormation.new
 				end
 
-				@cf = AWS::CloudFormation.new
 				@output_cache = TimedCache.new
 				@resource_cache = TimedCache.new
 
@@ -66,6 +83,10 @@ class Hiera
 					end
 
 					next if raw_answer.nil?
+
+					if @parse_metadata then
+						raw_answer = convert_metadata(raw_answer)
+					end
 
 					new_answer = Backend.parse_answer(raw_answer, scope)
 
@@ -130,6 +151,36 @@ class Hiera
 				end
 
 				return nil
+			end
+
+			def convert_metadata(json_object)
+				if json_object.is_a?(Hash) then
+					# convert each value of a Hash
+					converted_object = {}
+					json_object.each do |key, value|
+						converted_object[key] = convert_metadata(value)
+					end
+					return converted_object
+				elsif json_object.is_a?(Array) then
+					# convert each item in an Array
+					return json_object.map { |item| convert_metadata(item) }
+				elsif json_object == "true" then
+					# Boolean literals
+					return true
+				elsif json_object == "false" then
+					return false
+				elsif json_object == "null" then
+					return nil
+				elsif /^-?([1-9]\d*|0)(.\d+)?([eE][+-]?\d+)?$/.match(json_object) then
+					# Numeric literals
+					if json_object.include?('.') then
+						return json_object.to_f
+					else
+						return json_object.to_i
+					end
+				else
+					return json_object
+				end
 			end
 		end
 	end
