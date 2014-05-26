@@ -16,6 +16,7 @@ limitations under the License.
 
 require 'rubygems'
 require 'rubygems/package_task'
+require 'rake/testtask'
 
 spec = Gem::Specification.new do |gem|
 	gem.name          = "hiera-cloudformation"
@@ -40,4 +41,9 @@ end
 
 Gem::PackageTask.new(spec) do |pkg|
 	pkg.need_tar = true
+end
+
+Rake::TestTask.new do |t|
+  t.pattern = 'test/*_test.rb'
+  t.verbose = true
 end
