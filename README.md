@@ -111,3 +111,12 @@ and you include an entry:
 
 in your hierarchy, you can query hiera for the key "class::access_key_id" or "class::secret_access_key"
 and retrieve the attributes of the "MyIAMKey" resource created by CloudFormation.
+
+
+## Run tests
+
+Requires ruby 1.9+ for minitest
+
+```bash
+rake test
+```
