@@ -1,5 +1,5 @@
 =begin
-Copyright 2013 FanDuel Ltd.
+Copyright 2013-2014 FanDuel Ltd.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -16,10 +16,11 @@ limitations under the License.
 
 require 'rubygems'
 require 'rubygems/package_task'
+require 'rake/testtask'
 
 spec = Gem::Specification.new do |gem|
 	gem.name          = "hiera-cloudformation"
-	gem.version       = '0.0.1'
+	gem.version       = '0.0.2'
 	gem.authors       = ["Hugh Cole-Baker"]
 	gem.email         = ["hugh@fanduel.com"]
 	gem.summary       = %q{CloudFormation backend for Hiera}
@@ -40,4 +41,9 @@ end
 
 Gem::PackageTask.new(spec) do |pkg|
 	pkg.need_tar = true
+end
+
+Rake::TestTask.new do |t|
+  t.pattern = 'test/*_test.rb'
+  t.verbose = true
 end
