@@ -39,18 +39,18 @@ class Hiera
 						@parse_metadata = false
 					end
 
-					aws_config = {}
+					@aws_config = {}
 					if Config[:cloudformation].include?(:access_key_id) && Config[:cloudformation].include?(:secret_access_key) then
 						Hiera.debug("Found AWS access key #{Config[:cloudformation][:access_key_id]} from configuration")
-						aws_config[:access_key_id] = Config[:cloudformation][:access_key_id]
-						aws_config[:secret_access_key] = Config[:cloudformation][:secret_access_key]
+						@aws_config[:access_key_id] = Config[:cloudformation][:access_key_id]
+						@aws_config[:secret_access_key] = Config[:cloudformation][:secret_access_key]
 					end
 					if Config[:cloudformation].include?(:region) then
 						Hiera.debug("Found AWS region #{Config[:cloudformation][:region]} from configuration")
-						aws_config[:region] = Config[:cloudformation][:region]
+						@aws_config[:region] = Config[:cloudformation][:region]
 					end
-					if aws_config.length != 0 then
-						@cf = AWS::CloudFormation.new(aws_config)
+					if @aws_config.length != 0 then
+						@cf = AWS::CloudFormation.new(@aws_config)
 					else
 						Hiera.debug("No AWS configuration found, will fall back to env variables or IAM role")
 						@cf = AWS::CloudFormation.new
