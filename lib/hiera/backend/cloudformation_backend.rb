@@ -49,12 +49,9 @@ class Hiera
 						Hiera.debug("Found AWS region #{Config[:cloudformation][:region]} from configuration")
 						@aws_config[:region] = Config[:cloudformation][:region]
 					end
-					if @aws_config.length != 0 then
-						@cf = AWS::CloudFormation.new(@aws_config)
-					else
-						Hiera.debug("No AWS configuration found, will fall back to env variables or IAM role")
-						@cf = AWS::CloudFormation.new
-					end
+
+					create_connection()
+
 				else
 					Hiera.debug("No configuration found, will fall back to env variables or IAM role")
 					@cf = AWS::CloudFormation.new
@@ -65,6 +62,17 @@ class Hiera
 
 				Hiera.debug("Hiera cloudformation backend loaded")
 			end
+
+
+            def create_connection()
+        		if @aws_config.length != 0 then
+					@cf = AWS::CloudFormation.new(@aws_config)
+				else
+					Hiera.debug("No AWS configuration found, will fall back to env variables or IAM role")
+					@cf = AWS::CloudFormation.new
+				end
+			end
+
 
 			def lookup(key, scope, order_override, resolution_type)
 				answer = nil
