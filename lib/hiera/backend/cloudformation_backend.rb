@@ -50,8 +50,6 @@ class Hiera
 						@aws_config[:region] = Config[:cloudformation][:region]
 					end
 
-					create_connection()
-
 				else
 					Hiera.debug("No configuration found, will fall back to env variables or IAM role")
 					@cf = AWS::CloudFormation.new
@@ -65,6 +63,12 @@ class Hiera
 
 
             def create_connection()
+
+                # If we already have a connection object then return early.
+                if defined? @cf then
+                	return
+                end
+
         		if @aws_config.length != 0 then
 					@cf = AWS::CloudFormation.new(@aws_config)
 				else
@@ -76,6 +80,9 @@ class Hiera
 
 			def lookup(key, scope, order_override, resolution_type)
 				answer = nil
+
+                # Idempotent connection creation.
+      			create_connection()
 
 				Backend.datasources(scope, order_override) do |elem|
 					case elem
