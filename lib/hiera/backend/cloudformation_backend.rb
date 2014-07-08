@@ -62,20 +62,20 @@ class Hiera
 			end
 
 
-            def create_connection(scope)
+			def create_connection(scope)
 
-                # If we already have a connection object then return early.
-                if defined? @cf then
-                	return
-                end
+				# If we already have a connection object then return early.
+				if defined? @cf then
+					return
+				end
 
-                # Interpolate the value from hiera.yaml
-                if @aws_config.include?(:region)
-                	@aws_config[:region] = Backend.parse_answer(@aws_config[:region], scope)
-     		    	Hiera.debug("Using lookups from region #{@aws_config[:region]} for this run.")
-     		    end
+				# Interpolate the value from hiera.yaml
+				if @aws_config.include?(:region)
+					@aws_config[:region] = Backend.parse_answer(@aws_config[:region], scope)
+	 				Hiera.debug("Using lookups from region #{@aws_config[:region]} for this run.")
+	 			end
 
-        		if @aws_config.length != 0 then
+				if @aws_config.length != 0 then
 					@cf = AWS::CloudFormation.new(@aws_config)
 				else
 					Hiera.debug("No AWS configuration found, will fall back to env variables or IAM role")
@@ -87,8 +87,8 @@ class Hiera
 			def lookup(key, scope, order_override, resolution_type)
 				answer = nil
 
-                # Idempotent connection creation.
-      			create_connection(scope)
+				# Idempotent connection creation.
+	  			create_connection(scope)
 
 				Backend.datasources(scope, order_override) do |elem|
 					case elem
