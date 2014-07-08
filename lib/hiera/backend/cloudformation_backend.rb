@@ -39,22 +39,17 @@ class Hiera
 						@parse_metadata = false
 					end
 
-					aws_config = {}
+					@aws_config = {}
 					if Config[:cloudformation].include?(:access_key_id) && Config[:cloudformation].include?(:secret_access_key) then
 						Hiera.debug("Found AWS access key #{Config[:cloudformation][:access_key_id]} from configuration")
-						aws_config[:access_key_id] = Config[:cloudformation][:access_key_id]
-						aws_config[:secret_access_key] = Config[:cloudformation][:secret_access_key]
+						@aws_config[:access_key_id] = Config[:cloudformation][:access_key_id]
+						@aws_config[:secret_access_key] = Config[:cloudformation][:secret_access_key]
 					end
 					if Config[:cloudformation].include?(:region) then
 						Hiera.debug("Found AWS region #{Config[:cloudformation][:region]} from configuration")
-						aws_config[:region] = Config[:cloudformation][:region]
+						@aws_config[:region] = Config[:cloudformation][:region]
 					end
-					if aws_config.length != 0 then
-						@cf = AWS::CloudFormation.new(aws_config)
-					else
-						Hiera.debug("No AWS configuration found, will fall back to env variables or IAM role")
-						@cf = AWS::CloudFormation.new
-					end
+
 				else
 					Hiera.debug("No configuration found, will fall back to env variables or IAM role")
 					@cf = AWS::CloudFormation.new
@@ -66,8 +61,34 @@ class Hiera
 				Hiera.debug("Hiera cloudformation backend loaded")
 			end
 
+
+			def create_connection(scope)
+
+				# If we already have a connection object then return early.
+				if defined? @cf then
+					return
+				end
+
+				# Interpolate the value from hiera.yaml
+				if @aws_config.include?(:region)
+					@aws_config[:region] = Backend.parse_answer(@aws_config[:region], scope)
+	 				Hiera.debug("Using lookups from region #{@aws_config[:region]} for this run.")
+	 			end
+
+				if @aws_config.length != 0 then
+					@cf = AWS::CloudFormation.new(@aws_config)
+				else
+					Hiera.debug("No AWS configuration found, will fall back to env variables or IAM role")
+					@cf = AWS::CloudFormation.new
+				end
+			end
+
+
 			def lookup(key, scope, order_override, resolution_type)
 				answer = nil
+
+				# Idempotent connection creation.
+	  			create_connection(scope)
 
 				Backend.datasources(scope, order_override) do |elem|
 					case elem
