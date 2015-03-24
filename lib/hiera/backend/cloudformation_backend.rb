@@ -20,7 +20,6 @@ require 'json'
 
 class Hiera
   module Backend
-
     # Cache class that hides Redis vs. TimedCache implementation
     class Cache
       def initialize(type = nil)
@@ -48,17 +47,26 @@ class Hiera
 
       def get(key)
         if @redis
-          @redis.get key
+          @redis.get format_key(key)
         else
-          @timedcache.get key
+          @timedcache.get format_key(key)
         end
       end
 
       def put(key, value, timeout = 60)
         if @redis
-          @redis.set(key, value)
+          @redis.set(format_key(key), value)
         else
-          @timedcache.put(key, value, timeout)
+          @timedcache.put(format_key(key), value, timeout)
+        end
+      end
+
+      # If key is Enumerable convert to a json string
+      def format_key(key)
+        if key.is_a? Enumberable
+          key.to_json
+        else
+          key
         end
       end
     end
