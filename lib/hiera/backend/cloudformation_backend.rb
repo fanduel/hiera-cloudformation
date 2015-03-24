@@ -15,10 +15,54 @@
 require 'rubygems'
 require 'aws'
 require 'timedcache'
+require 'redis'
 require 'json'
 
 class Hiera
   module Backend
+
+    # Cache class that hides Redis vs. TimedCache implementation
+    class Cache
+      def initialize(type = nil)
+        @type = type
+
+        if Config.include?(:cloudformation) && !Config[:cloudformation].nil?
+          if Config[:cloudformation].include?(:redis_hostname)
+            @redis_hostname = Config[:cloudformation][:redis_hostname]
+          end
+        end
+
+        if @redis_hostname
+          case type
+          when 'output'
+            @redis = redis.StrictRedis(@redis_hostname, 6379, 0)
+          when 'resource'
+            @redis = redis.StrictRedis(@redis_hostname, 6379, 1)
+          else
+            @redis = redis.StrictRedis(@redis_hostname, 6379, 2)
+          end
+        else
+          @timedcache = TimedCache.new
+        end
+      end
+
+      def get(key)
+        if @redis
+          @redis.get key
+        else
+          @timedcache.get key
+        end
+      end
+
+      def put(key, value, timeout = 60)
+        if @redis
+          @redis.set(key, value)
+        else
+          @timedcache.put(key, value, timeout)
+        end
+      end
+    end
+
     class Cloudformation_backend
       TIMEOUT = 60  # 1 minute timeout for AWS API response caching
 
@@ -52,8 +96,8 @@ class Hiera
           @cf = AWS::CloudFormation.new
         end
 
-        @output_cache = TimedCache.new
-        @resource_cache = TimedCache.new
+        @output_cache = Cache.new('output')
+        @resource_cache = Cache.new('resource')
 
         Hiera.debug('Hiera cloudformation backend loaded')
       end
