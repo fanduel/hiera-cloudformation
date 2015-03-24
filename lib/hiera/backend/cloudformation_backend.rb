@@ -32,14 +32,7 @@ class Hiera
         end
 
         if @redis_hostname
-          case type
-          when 'output'
-            @redis = redis.StrictRedis(@redis_hostname, 6379, 0)
-          when 'resource'
-            @redis = redis.StrictRedis(@redis_hostname, 6379, 1)
-          else
-            @redis = redis.StrictRedis(@redis_hostname, 6379, 2)
-          end
+          @redis = redis.StrictRedis(@redis_hostname, 6379, 0)
         else
           @timedcache = TimedCache.new
         end
