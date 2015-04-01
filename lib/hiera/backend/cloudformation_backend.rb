@@ -149,7 +149,7 @@ class Hiera
       end
 
       def stack_output_query(stack_name, key)
-        outputs = @output_cache.get(stack_name)
+        outputs = @output_cache.get({ :stack => stack_name, :outputs => true })
 
         if outputs.nil?
           Hiera.debug("#{stack_name} outputs not cached, fetching...")
@@ -159,7 +159,7 @@ class Hiera
             Hiera.debug("Stack #{stack_name} outputs can't be retrieved")
             outputs = []  # this is just a non-nil value to serve as marker in cache
           end
-          @output_cache.put(stack_name, outputs)
+          @output_cache.put({ :stack => stack_name, :outputs => true }, outputs)
         end
 
         output = outputs.select { |item| item.key == key }
