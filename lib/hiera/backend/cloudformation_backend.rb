@@ -22,8 +22,9 @@ class Hiera
   module Backend
     # Cache class that hides Redis vs. TimedCache implementation
     class Cache
-      def initialize(type = nil)
+      def initialize(cache_ttl = 60)
         @type = type
+        @cache_ttl = cache_ttl
 
         if Config.include?(:cloudformation) && !Config[:cloudformation].nil?
           if Config[:cloudformation].include?(:redis_hostname)
@@ -46,11 +47,15 @@ class Hiera
         end
       end
 
-      def put(key, value, timeout = 60)
+      def put(key, value)
         if @redis
-          @redis.set(format_key(key), value)
+          if @cache_ttl < 1
+            @redis.set(format_key(key), value)
+          else
+            @redis.setex(format_key(key), @cache_ttl, value)
+          end
         else
-          @timedcache.put(format_key(key), value, timeout)
+          @timedcache.put(format_key(key), value, @cache_ttl)
         end
       end
 
@@ -65,8 +70,6 @@ class Hiera
     end
 
     class Cloudformation_backend
-      TIMEOUT = 60  # 1 minute timeout for AWS API response caching
-
       def initialize
         if Config.include?(:cloudformation) && !Config[:cloudformation].nil?
           if Config[:cloudformation].fetch(:parse_metadata, false)
@@ -74,6 +77,12 @@ class Hiera
             @parse_metadata = true
           else
             @parse_metadata = false
+          end
+
+          if Config[:cloudformation].include?(:cache_ttl)
+            cache_ttl = Config[:cloudformation][:cache_ttl]
+          else
+            cache_ttl = 60
           end
 
           aws_config = {}
@@ -97,8 +106,8 @@ class Hiera
           @cf = AWS::CloudFormation.new
         end
 
-        @output_cache = Cache.new('output')
-        @resource_cache = Cache.new('resource')
+        @output_cache = Cache.new(cache_ttl)
+        @resource_cache = Cache.new(cache_ttl)
 
         Hiera.debug('Hiera cloudformation backend loaded')
       end
@@ -150,7 +159,7 @@ class Hiera
             Hiera.debug("Stack #{stack_name} outputs can't be retrieved")
             outputs = []  # this is just a non-nil value to serve as marker in cache
           end
-          @output_cache.put(stack_name, outputs, TIMEOUT)
+          @output_cache.put(stack_name, outputs)
         end
 
         output = outputs.select { |item| item.key == key }
@@ -170,7 +179,7 @@ class Hiera
             Hiera.debug("Stack #{stack_name} resource #{resource_id} can't be retrieved")
             metadata = '{}' # This is just a non-nil value to serve as marker in cache
           end
-          @resource_cache.put({ :stack => stack_name, :resource => resource_id }, metadata, TIMEOUT)
+          @resource_cache.put({ :stack => stack_name, :resource => resource_id }, metadata)
         end
 
         if metadata.respond_to?(:to_str)
