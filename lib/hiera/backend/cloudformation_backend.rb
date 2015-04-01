@@ -41,7 +41,7 @@ class Hiera
 
       def get(key)
         if @redis
-          @redis.get format_key(key)
+          JSON.parse(@redis.get format_key(key))
         else
           @timedcache.get format_key(key)
         end
@@ -49,10 +49,11 @@ class Hiera
 
       def put(key, value)
         if @redis
+          json_value = JSON.generate(value)
           if @cache_ttl < 1
-            @redis.set(format_key(key), value)
+            @redis.set(format_key(key), json_value)
           else
-            @redis.setex(format_key(key), @cache_ttl, value)
+            @redis.setex(format_key(key), @cache_ttl, json_value)
           end
         else
           @timedcache.put(format_key(key), value, @cache_ttl)
