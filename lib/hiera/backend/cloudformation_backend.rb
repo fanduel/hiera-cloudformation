@@ -33,7 +33,7 @@ class Hiera
         end
 
         if @redis_hostname
-          @redis = redis.StrictRedis(@redis_hostname, 6379, 0)
+          @redis = Redis.new(:host => @redis_hostname, :port => 6380, :db => 0)
         else
           @timedcache = TimedCache.new
         end
