@@ -23,7 +23,6 @@ class Hiera
     # Cache class that hides Redis vs. TimedCache implementation
     class Cache
       def initialize(cache_ttl = 60)
-        @type = type
         @cache_ttl = cache_ttl
 
         if Config.include?(:cloudformation) && !Config[:cloudformation].nil?
