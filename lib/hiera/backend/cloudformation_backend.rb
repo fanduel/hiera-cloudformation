@@ -32,41 +32,77 @@ class Hiera
         end
 
         if @redis_hostname
-          @redis = Redis.new(:host => @redis_hostname, :port => 6380, :db => 0)
+          @redis = Redis.new(:host => @redis_hostname, :port => 6379, :db => 0)
         else
           @timedcache = TimedCache.new
         end
       end
 
       def get(key)
+        formatted_key = format_key(key)
+
         if @redis
-          JSON.parse(@redis.get format_key(key))
+          Hiera.debug("Attempting to fetch #{formatted_key} from Redis")
+          result = @redis.get(formatted_key)
+          
+          JSON.parse(result) unless result.nil?
         else
-          @timedcache.get format_key(key)
+          Hiera.debug("Attempting to fetch #{formatted_key} from TimedCache")
+          @timedcache.get formatted_key
         end
       end
 
       def put(key, value)
+        formatted_key = format_key(key)
+        formatted_value = format_value(value)
+
         if @redis
-          json_value = JSON.generate(value)
           if @cache_ttl < 1
-            @redis.set(format_key(key), json_value)
+            Hiera.debug("Attempting to set #{formatted_key} in Redis")
+            @redis.set(formatted_key, formatted_value)
           else
-            @redis.setex(format_key(key), @cache_ttl, json_value)
+            Hiera.debug("Attempting to setex #{formatted_key} in Redis with TTL of #{@cache_ttl}")
+            @redis.setex(formatted_key, @cache_ttl, formatted_value)
           end
         else
-          @timedcache.put(format_key(key), value, @cache_ttl)
+          Hiera.debug("Attempting to set #{formatted_key} in TimedCache with TTL of #{@cache_ttl}")
+          @timedcache.put(formatted_key, formatted_value, @cache_ttl)
         end
+
+        formatted_value
       end
 
       # If key is Enumerable convert to a json string
       def format_key(key)
-        if key.is_a? Enumberable
+        if key.is_a? Enumerable
           key.to_json
         else
           key
         end
       end
+
+      # Marshal values into sensible JSON form, assumes all arrays contain values of same type
+      def format_value(value)
+        if value.is_a? Array
+          if value.first.is_a? AWS::CloudFormation::StackOutput 
+            stack_outputs = value.collect do |stack_output|
+              {
+                :description => stack_output.description,
+                :key => stack_output.key,
+                :value => stack_output.value
+              }
+            end
+            JSON.generate(stack_outputs)
+          else
+            JSON.generate(value)
+          end
+        elsif value.is_a? Hash
+          JSON.generate(value)
+        else
+          value
+        end
+      end
+
     end
 
     class Cloudformation_backend
@@ -120,7 +156,7 @@ class Hiera
           when %r{cfstack/([^/]+)/outputs}
             Hiera.debug("Looking up #{key} as an output of stack #{$1}")
             raw_answer = stack_output_query($1, key)
-          when %{cfstack/([^/]+)/resources/([^/]+)}
+          when %r{cfstack/([^/]+)/resources/([^/]+)}
             Hiera.debug("Looking up #{key} in metadata of stack #{$1} resource #{$2}")
             raw_answer = stack_resource_query($1, $2, key)
           else
@@ -146,6 +182,8 @@ class Hiera
             break
           end
         end
+
+        answer
       end
 
       def stack_output_query(stack_name, key)
@@ -159,10 +197,10 @@ class Hiera
             Hiera.debug("Stack #{stack_name} outputs can't be retrieved")
             outputs = []  # this is just a non-nil value to serve as marker in cache
           end
-          @output_cache.put({ :stack => stack_name, :outputs => true }, outputs)
+          outputs = @output_cache.put({ :stack => stack_name, :outputs => true }, outputs)
         end
 
-        output = outputs.select { |item| item.key == key }
+        output = outputs.select { |item| item[:key] == key }
 
         output.empty? ? nil : output.shift.value
       end
