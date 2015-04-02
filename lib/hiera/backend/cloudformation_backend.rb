@@ -220,12 +220,8 @@ class Hiera
           @resource_cache.put({ :stack => stack_name, :resource => resource_id }, metadata)
         end
 
-        if metadata.respond_to?(:to_str)
-          data = JSON.parse(metadata)
-
-          if data.include?('hiera')
-            return data['hiera'][key] if data['hiera'].include?(key)
-          end
+        if metadata.include?('hiera')
+          return metadata['hiera'][key] if metadata['hiera'].include?(key)
         end
 
         nil
