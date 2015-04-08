@@ -29,10 +29,22 @@ class Hiera
           if Config[:cloudformation].include?(:redis_hostname)
             @redis_hostname = Config[:cloudformation][:redis_hostname]
           end
+
+          if Config[:cloudformation].include?(:redis_port)
+            @redis_port = Config[:cloudformation][:redis_port]
+          else
+            @redis_port = 6379
+          end
+
+          if Config[:cloudformation].include?(:redis_db)
+            @redis_db = Config[:cloudformation][:redis_db]
+          else
+            @redis_db = 0
+          end
         end
 
         if @redis_hostname
-          @redis = Redis.new(:host => @redis_hostname, :port => 6379, :db => 0)
+          @redis = Redis.new(:host => @redis_hostname, :port => @redis_port, :db => @redis_db)
         else
           @timedcache = TimedCache.new
         end
@@ -44,7 +56,7 @@ class Hiera
         if @redis
           Hiera.debug("Attempting to fetch #{formatted_key} from Redis")
           result = @redis.get(formatted_key)
-          
+
           JSON.parse(result) unless result.nil?
         else
           Hiera.debug("Attempting to fetch #{formatted_key} from TimedCache")
@@ -102,7 +114,6 @@ class Hiera
           value
         end
       end
-
     end
 
     class Cloudformation_backend
