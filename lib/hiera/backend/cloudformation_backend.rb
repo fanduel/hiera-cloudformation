@@ -26,8 +26,8 @@ class Hiera
         @cache_ttl = cache_ttl
 
         if Config.include?(:cloudformation) && !Config[:cloudformation].nil?
-          if Config[:cloudformation].include?(:redis_hostname)
-            @redis_hostname = Config[:cloudformation][:redis_hostname]
+          if Config[:cloudformation].include?(:redis_host)
+            @redis_host = Config[:cloudformation][:redis_host]
           end
 
           if Config[:cloudformation].include?(:redis_port)
@@ -43,8 +43,8 @@ class Hiera
           end
         end
 
-        if @redis_hostname
-          @redis = Redis.new(:host => @redis_hostname, :port => @redis_port, :db => @redis_db)
+        if @redis_host
+          @redis = Redis.new(:host => @redis_host, :port => @redis_port, :db => @redis_db)
         else
           @timedcache = TimedCache.new
         end
