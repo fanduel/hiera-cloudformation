@@ -56,12 +56,12 @@ class Hiera
         if @redis
           Hiera.debug("Attempting to fetch #{formatted_key} from Redis")
           result = @redis.get(formatted_key)
-
-          JSON.parse(result) unless result.nil?
         else
           Hiera.debug("Attempting to fetch #{formatted_key} from TimedCache")
-          @timedcache.get formatted_key
+          result = @timedcache.get formatted_key
         end
+
+        JSON.parse(result) unless result.nil?
       end
 
       def put(key, value)
@@ -96,7 +96,7 @@ class Hiera
       # Marshal values into sensible JSON form, assumes all arrays contain values of same type
       def format_value(value)
         if value.is_a? Array
-          if value.first.is_a? AWS::CloudFormation::StackOutput 
+          if value.first.is_a? AWS::CloudFormation::StackOutput
             stack_outputs = value.collect do |stack_output|
               {
                 :description => stack_output.description,
@@ -128,8 +128,6 @@ class Hiera
 
           if Config[:cloudformation].include?(:cache_ttl)
             cache_ttl = Config[:cloudformation][:cache_ttl]
-          else
-            cache_ttl = 60
           end
 
           aws_config = {}
@@ -153,6 +151,7 @@ class Hiera
           @cf = AWS::CloudFormation.new
         end
 
+        cache_ttl ||= 60
         @output_cache = Cache.new(cache_ttl)
         @resource_cache = Cache.new(cache_ttl)
 
