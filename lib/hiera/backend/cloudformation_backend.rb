@@ -226,6 +226,8 @@ class Hiera
             # Stack or resource doesn't exist
             Hiera.debug("Stack #{stack_name} resource #{resource_id} can't be retrieved")
             metadata = '{}' # This is just a non-nil value to serve as marker in cache
+          else
+            metadata ||= '{}'
           end
           @resource_cache.put({ :stack => stack_name, :resource => resource_id }, metadata)
         end
