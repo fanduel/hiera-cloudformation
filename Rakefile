@@ -1,5 +1,5 @@
 =begin
-Copyright 2013-2014 FanDuel Ltd.
+Copyright 2013-2015 FanDuel Ltd.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ require 'rake/testtask'
 
 spec = Gem::Specification.new do |gem|
 	gem.name          = "hiera-cloudformation"
-	gem.version       = '0.0.2'
+	gem.version       = '0.0.3'
 	gem.authors       = ["Hugh Cole-Baker"]
 	gem.email         = ["hugh@fanduel.com"]
 	gem.summary       = %q{CloudFormation backend for Hiera}
@@ -37,6 +37,7 @@ spec = Gem::Specification.new do |gem|
 	gem.add_runtime_dependency "aws-sdk", "~> 1.11.2"
 	gem.add_runtime_dependency "timedcache", "~> 0.4.0"
 	gem.add_runtime_dependency "json", "~> 1.8.0"
+	gem.add_runtime_dependency "redis", "~> 3.2.1"
 end
 
 Gem::PackageTask.new(spec) do |pkg|

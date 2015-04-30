@@ -1,5 +1,5 @@
    hiera-cloudformation
-   Copyright 2013-2014 FanDuel Ltd.
+   Copyright 2013-2015 FanDuel Ltd.
 
    This product includes software developed at
    FanDuel Ltd (https://www.fanduel.com/).

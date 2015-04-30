@@ -25,6 +25,22 @@ To provide the backend with an AWS access key, you can add the following configu
       :access_key_id: Your_AWS_Access_Key_ID_Here
       :secret_access_key: Your_AWS_Secret_Access_Key_Here
 
+The data fetched from the CloudFormation API will be cached. By default this is a process local cache
+which is persisted for 60 seconds. You may also store cached data in a Redis server and optionally
+make the data persistent by setting a cache_ttl of < 1. To configure for Redis add the following 
+configuration to the `:cloudformation` section in hiera.yaml (`:redis_port` and `:redis_db` settings
+are optional and will default to the values shown.
+
+    :cloudformation:
+      :redis_hostname: Your_Redis_Hostname_Or_IP_Address
+      :redis_port: 6379
+      :redis_db: 0
+      :cache_ttl: -1
+
+If you set the cache_ttl so that data is not expired from the cache you should have some other
+mechanism to keep the cache updated and cleaned of old keys. One way is to have a process CloudFormation
+SNS/SQS events and insert, update and delete keys from the cache as stacks events take place.
+
 If you do not add these keys to your configuration file, the access keys will be looked up from
 the `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` environment variables, or from an IAM
 instance role (if you are running Hiera on an EC2 instance with an IAM role assigned).
