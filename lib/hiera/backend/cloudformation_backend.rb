@@ -210,9 +210,11 @@ class Hiera
           outputs = @output_cache.put({ :stack => stack_name, :outputs => true }, outputs)
         end
 
-        output = outputs.select { |item| item[:key] == key }
+        output = outputs.select do |item| 
+          item['key'] == key 
+        end
 
-        output.empty? ? nil : output.shift.value
+        output.empty? ? nil : output.shift['value']
       end
 
       def stack_resource_query(stack_name, resource_id, key)
