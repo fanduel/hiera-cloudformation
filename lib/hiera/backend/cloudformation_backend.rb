@@ -13,7 +13,7 @@
 # limitations under the License.
 
 require 'rubygems'
-require 'aws'
+require 'aws-sdk'
 require 'timedcache'
 require 'redis'
 require 'json'
@@ -209,6 +209,8 @@ class Hiera
           end
           outputs = @output_cache.put({ :stack => stack_name, :outputs => true }, outputs)
         end
+
+        return nil if outputs.class == String
 
         output = outputs.select do |item| 
           item['key'] == key 
