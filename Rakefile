@@ -20,7 +20,7 @@ require 'rake/testtask'
 
 spec = Gem::Specification.new do |gem|
 	gem.name          = "hiera-cloudformation"
-	gem.version       = '0.0.4'
+	gem.version       = '0.1.0'
 	gem.authors       = ["Hugh Cole-Baker"]
 	gem.email         = ["hugh@fanduel.com"]
 	gem.summary       = %q{CloudFormation backend for Hiera}
@@ -34,7 +34,7 @@ spec = Gem::Specification.new do |gem|
 	gem.require_paths = ["lib"]
 
 	gem.add_development_dependency "rake"
-	gem.add_runtime_dependency "aws-sdk", "~> 2.1.1"
+	gem.add_runtime_dependency "aws-sdk", "~> 2.1.2"
 	gem.add_runtime_dependency "timedcache", "~> 0.4.0"
 	gem.add_runtime_dependency "json", "~> 1.8.0"
 	gem.add_runtime_dependency "redis", "~> 3.2.1"
