@@ -13,7 +13,7 @@
 # limitations under the License.
 
 require 'rubygems'
-require 'aws'
+require 'aws-sdk'
 require 'timedcache'
 require 'redis'
 require 'json'
@@ -141,14 +141,14 @@ class Hiera
             aws_config[:region] = Config[:cloudformation][:region]
           end
           if aws_config.length != 0
-            @cf = AWS::CloudFormation.new(aws_config)
+            @cf = Aws::CloudFormation::Client.new(aws_config)
           else
             Hiera.debug('No AWS configuration found, will fall back to env variables or IAM role')
-            @cf = AWS::CloudFormation.new
+            @cf = Aws::CloudFormation::Client.new
           end
         else
           Hiera.debug('No configuration found, will fall back to env variables or IAM role')
-          @cf = AWS::CloudFormation.new
+          @cf = Aws::CloudFormation::Client.new
         end
 
         cache_ttl ||= 60
@@ -202,17 +202,26 @@ class Hiera
         if outputs.nil?
           Hiera.debug("#{stack_name} outputs not cached, fetching...")
           begin
-            outputs = @cf.stacks[stack_name].outputs
-          rescue AWS::CloudFormation::Errors::ValidationError
+            stacks = @cf.describe_stacks.select do | stack |
+              stack.stack_name == stack_name
+            end
+
+            outputs = stacks.shift.outputs
+          
+          rescue Aws::CloudFormation::Errors::ValidationError
             Hiera.debug("Stack #{stack_name} outputs can't be retrieved")
             outputs = []  # this is just a non-nil value to serve as marker in cache
           end
           outputs = @output_cache.put({ :stack => stack_name, :outputs => true }, outputs)
         end
 
-        output = outputs.select { |item| item[:key] == key }
+        return nil if outputs.class == String
 
-        output.empty? ? nil : output.shift.value
+        output = outputs.select do |item| 
+          item['output_key'] == key 
+        end
+
+        output.empty? ? nil : output.shift['output_value']
       end
 
       def stack_resource_query(stack_name, resource_id, key)
@@ -222,7 +231,7 @@ class Hiera
           Hiera.debug("#{stack_name} #{resource_id} metadata not cached, fetching")
           begin
             metadata = @cf.stacks[stack_name].resources[resource_id].metadata
-          rescue AWS::CloudFormation::Errors::ValidationError
+          rescue Aws::CloudFormation::Errors::ValidationError
             # Stack or resource doesn't exist
             Hiera.debug("Stack #{stack_name} resource #{resource_id} can't be retrieved")
             metadata = '{}' # This is just a non-nil value to serve as marker in cache
