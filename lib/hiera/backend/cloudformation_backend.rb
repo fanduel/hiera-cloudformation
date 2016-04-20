@@ -205,9 +205,9 @@ class Hiera
             outputs = @cf.stacks[stack_name].outputs
           rescue AWS::CloudFormation::Errors::ValidationError
             Hiera.debug("Stack #{stack_name} outputs can't be retrieved")
-            outputs = []  # this is just a non-nil value to serve as marker in cache
+            outputs = [] # this is just a non-nil value to serve as marker in cache
           end
-          outputs = @output_cache.put({ :stack => stack_name, :outputs => true }, outputs)
+          @output_cache.put({ :stack => stack_name, :outputs => true }, outputs)
         end
 
         output = outputs.select { |item| item[:key] == key }

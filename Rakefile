@@ -20,9 +20,9 @@ require 'rake/testtask'
 
 spec = Gem::Specification.new do |gem|
 	gem.name          = "hiera-cloudformation"
-	gem.version       = '0.0.3'
-	gem.authors       = ["Hugh Cole-Baker"]
-	gem.email         = ["hugh@fanduel.com"]
+	gem.version       = '0.0.4'
+	gem.authors       = ["Hugh Cole-Baker", "Jim Croft"]
+	gem.email         = ["hugh@fanduel.com", "jim.croft@fanduel.com"]
 	gem.summary       = %q{CloudFormation backend for Hiera}
 	gem.description   = %q{Queries CloudFormation stack outputs or resource metadata for Hiera data}
 	gem.homepage      = "https://github.com/fanduel/hiera-cloudformation"
