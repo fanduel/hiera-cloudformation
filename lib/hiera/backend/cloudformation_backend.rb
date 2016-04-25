@@ -212,7 +212,7 @@ class Hiera
           @output_cache.put({ :stack => stack_name, :outputs => true }, outputs)
         end
 
-        output = outputs.select { |item| item[:key] == key }
+        output = outputs.select { |item| item.key == key }
 
         output.empty? ? nil : output.shift.value
       end
