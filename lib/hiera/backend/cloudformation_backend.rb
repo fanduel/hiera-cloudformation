@@ -81,7 +81,7 @@ class Hiera
           @timedcache.put(formatted_key, formatted_value, @cache_ttl)
         end
 
-        formatted_value
+        JSON.parse(formatted_value)
       end
 
       # If key is Enumerable convert to a json string
@@ -209,12 +209,11 @@ class Hiera
           else
             outputs ||= []
           end
-          @output_cache.put({ :stack => stack_name, :outputs => true }, outputs)
+          outputs = @output_cache.put({ :stack => stack_name, :outputs => true }, outputs)
         end
 
-        output = outputs.select { |item| item.key == key }
-
-        output.empty? ? nil : output.shift.value
+        output = outputs.select { |item| item['key'] == key }
+        output.empty? ? nil : output.shift['value']
       end
 
       def stack_resource_query(stack_name, resource_id, key)
@@ -231,7 +230,7 @@ class Hiera
           else
             metadata ||= '{}'
           end
-          @resource_cache.put({ :stack => stack_name, :resource => resource_id }, metadata)
+          metadata = @resource_cache.put({ :stack => stack_name, :resource => resource_id }, metadata)
         end
 
         if metadata.include?('hiera')
