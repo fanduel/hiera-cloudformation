@@ -203,11 +203,14 @@ class Hiera
           Hiera.debug("#{stack_name} outputs not cached, fetching...")
           begin
             outputs = @cf.stacks[stack_name].outputs
-          rescue AWS::CloudFormation::Errors::ValidationError
+          rescue AWS::Errors::Base
             Hiera.debug("Stack #{stack_name} outputs can't be retrieved")
-            outputs = [] # this is just a non-nil value to serve as marker in cache
+            outputs = nil
           end
-          @output_cache.put({ :stack => stack_name, :outputs => true }, outputs)
+
+          if outputs
+            @output_cache.put({ :stack => stack_name, :outputs => true }, outputs)
+          end
         end
 
         output = outputs.select { |item| item[:key] == key }
@@ -222,10 +225,10 @@ class Hiera
           Hiera.debug("#{stack_name} #{resource_id} metadata not cached, fetching")
           begin
             metadata = @cf.stacks[stack_name].resources[resource_id].metadata
-          rescue AWS::CloudFormation::Errors::ValidationError
+          rescue AWS::Errors::Base
             # Stack or resource doesn't exist
             Hiera.debug("Stack #{stack_name} resource #{resource_id} can't be retrieved")
-            metadata = '{}' # This is just a non-nil value to serve as marker in cache
+            metadata = nil
           else
             metadata ||= '{}'
           end
