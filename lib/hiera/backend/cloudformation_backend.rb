@@ -213,9 +213,12 @@ class Hiera
           end
         end
 
-        output = outputs.select { |item| item[:key] == key }
-
-        output.empty? ? nil : output.shift.value
+        if outputs
+          output = outputs.select { |item| item[:key] == key }
+          output.empty? ? nil : output.shift.value
+        else
+          nil
+        end
       end
 
       def stack_resource_query(stack_name, resource_id, key)
@@ -232,10 +235,13 @@ class Hiera
           else
             metadata ||= '{}'
           end
-          @resource_cache.put({ :stack => stack_name, :resource => resource_id }, metadata)
+
+          if metadata
+            @resource_cache.put({ :stack => stack_name, :resource => resource_id }, metadata)
+          end
         end
 
-        if metadata.include?('hiera')
+        if metadata && metadata.include?('hiera')
           return metadata['hiera'][key] if metadata['hiera'].include?(key)
         end
 
